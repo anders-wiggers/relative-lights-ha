@@ -12,31 +12,29 @@ class RelativeLightSlider extends LitElement {
     ha-slider {
       width: 100%;
       --mdc-theme-primary: var(--slider-color);
-      --slider-color: var(--primary-color);
       border-radius: 999px;
     }
 
-    /* Base track */
+    /* Full track */
     ha-slider::part(track) {
-      height: 40px;
+      height: 44px;
       border-radius: 999px;
       background: rgba(255, 255, 255, 0.08);
     }
 
     /* Active track */
     ha-slider::part(track-active) {
-      height: 40px;
+      height: 44px;
       border-radius: 999px;
       background: var(--slider-color);
-      box-shadow: none;   /* remove glow */
+      box-shadow: none;
     }
 
     /* Thumb */
     ha-slider::part(thumb) {
-      width: 28px;
-      height: 28px;
-      border-radius: 50%;
-      background: white;
+      width: 0;
+      height: 0;
+      opacity: 0;
       box-shadow: none;
     }
  
@@ -86,7 +84,7 @@ class RelativeLightSlider extends LitElement {
 
   render() {
     return html`
-      <ha-card header="${this.config.title || "Room Brightness"}">
+      <ha-card header="${this.config.title}">
         <div
           class="wrapper"
           style="--slider-color:${this._color};"
