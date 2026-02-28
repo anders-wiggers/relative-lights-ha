@@ -1,4 +1,8 @@
 {
-    "name": "Relative brightness light group",
-    "render_readme": true
+  "name": "Relative Light Slider",
+  "content_in_root": true,
+  "render_readme": true,
+  "filename": "relative-light-slider.js",
+  "type": "frontend",
+  "homeassistant": "2023.0.0"
 }
