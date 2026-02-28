@@ -9,20 +9,43 @@ class RelativeLightSlider extends LitElement {
   };
 
   static styles = css`
+    ha-slider {
+      width: 100%;
+      --mdc-theme-primary: var(--slider-color);
+      --slider-color: var(--primary-color);
+      border-radius: 999px;
+    }
+
+    /* Base track */
+    ha-slider::part(track) {
+      height: 40px;
+      border-radius: 999px;
+      background: rgba(255, 255, 255, 0.08);
+    }
+
+    /* Active track */
+    ha-slider::part(track-active) {
+      height: 40px;
+      border-radius: 999px;
+      background: var(--slider-color);
+      box-shadow: none;   /* remove glow */
+    }
+
+    /* Thumb */
+    ha-slider::part(thumb) {
+      width: 28px;
+      height: 28px;
+      border-radius: 50%;
+      background: white;
+      box-shadow: none;
+    }
+ 
     ha-card {
       padding: 16px;
     }
 
     .wrapper {
       width: 100%;
-    }
-
-    ha-slider {
-      width: 100%;
-      --mdc-theme-primary: var(--slider-color);
-      --slider-color: var(--primary-color);
-      transition: 0.3s ease;
-      border-radius: 999px;
     }
 
     .slider-container {
@@ -35,30 +58,6 @@ class RelativeLightSlider extends LitElement {
       margin-top: 12px;
       font-weight: 500;
       opacity: 0.8;
-    }
-
-    /* Bubble look */
-    ha-slider::part(track) {
-      border-radius: 999px;
-      height: 12px;
-      background: rgba(255, 255, 255, 0.08);
-    }
-
-    ha-slider::part(track-active) {
-      border-radius: 999px;
-      height: 12px;
-      background: var(--slider-color);
-      box-shadow: 0 0 12px var(--slider-color);
-      transition: 0.3s ease;
-    }
-
-    ha-slider::part(thumb) {
-      width: 22px;
-      height: 22px;
-      background: white;
-      border-radius: 50%;
-      box-shadow: 0 2px 6px rgba(0,0,0,0.4);
-      transition: 0.2s ease;
     }
   `;
 
@@ -247,26 +246,26 @@ class RelativeLightSlider extends LitElement {
   }
 
   _applyBrightness(percent) {
-    const lights = this._getTargetLights();
-    const brightness = Math.round((percent / 100) * 255);
+  const lights = this._getTargetLights();
+  const brightness = Math.round((percent / 100) * 255);
 
-    lights.forEach(id => {
-      const s = this._hass.states[id];
-      if (!s) return;
+  lights.forEach(id => {
+    const s = this._hass.states[id];
+    if (!s || s.state !== "on") return;  // ✅ ONLY ON lights
 
-      if (percent === 0) {
-        this._hass.callService("light", "turn_off", {
-          entity_id: id
-        });
-        return;
-      }
-
-      this._hass.callService("light", "turn_on", {
-        entity_id: id,
-        brightness
+    if (percent === 0) {
+      this._hass.callService("light", "turn_off", {
+        entity_id: id
       });
+      return;
+    }
+
+    this._hass.callService("light", "turn_on", {
+      entity_id: id,
+      brightness
     });
-  }
+  });
+}
 
   getCardSize() {
     return 2;
