@@ -1,0 +1,7 @@
+{
+  "name": "relative-light-slider",
+  "version": "1.0.0",
+  "description": "Native Home Assistant area-aware brightness slider",
+  "author": "Anders Wiggers",
+  "license": "MIT"
+}

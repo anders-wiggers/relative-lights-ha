@@ -1,8 +1,8 @@
 {
   "name": "Relative Light Slider",
-  "content_in_root": true,
-  "render_readme": true,
+  "content_in_root": false,
   "filename": "relative-light-slider.js",
+  "render_readme": true,
   "type": "frontend",
-  "homeassistant": "2023.0.0"
+  "homeassistant": "2023.8.0"
 }
