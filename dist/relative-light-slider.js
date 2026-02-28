@@ -4,7 +4,8 @@ class RelativeLightSlider extends LitElement {
   static properties = {
     hass: {},
     config: {},
-    _value: { state: true }
+    _value: { state: true },
+    _color: { state: true }
   };
 
   static styles = css`
@@ -12,16 +13,52 @@ class RelativeLightSlider extends LitElement {
       padding: 16px;
     }
 
+    .wrapper {
+      width: 100%;
+    }
+
+    ha-slider {
+      width: 100%;
+      --mdc-theme-primary: var(--slider-color);
+      --slider-color: var(--primary-color);
+      transition: 0.3s ease;
+      border-radius: 999px;
+    }
+
+    .slider-container {
+      padding: 8px 0;
+      transition: 0.3s ease;
+    }
+
     .value {
       text-align: center;
       margin-top: 12px;
       font-weight: 500;
-      font-size: 14px;
+      opacity: 0.8;
     }
 
-    .slider-wrapper {
-      --slider-color: var(--primary-color);
+    /* Bubble look */
+    ha-slider::part(track) {
+      border-radius: 999px;
+      height: 12px;
+      background: rgba(255, 255, 255, 0.08);
+    }
+
+    ha-slider::part(track-active) {
+      border-radius: 999px;
+      height: 12px;
+      background: var(--slider-color);
+      box-shadow: 0 0 12px var(--slider-color);
       transition: 0.3s ease;
+    }
+
+    ha-slider::part(thumb) {
+      width: 22px;
+      height: 22px;
+      background: white;
+      border-radius: 50%;
+      box-shadow: 0 2px 6px rgba(0,0,0,0.4);
+      transition: 0.2s ease;
     }
   `;
 
@@ -36,36 +73,37 @@ class RelativeLightSlider extends LitElement {
     };
 
     this._value = 0;
+    this._color = "var(--primary-color)";
   }
 
   set hass(hass) {
     this._hass = hass;
-    const avg = this._calculateAverageBrightness();
-    if (avg !== null) {
-      this._value = avg;
-    }
+
+    this._value = this._calculateAverageBrightness();
+    this._color = this._calculateAverageColor();
+
     this.requestUpdate();
   }
 
   render() {
-    const dynamicColor = `hsl(${this._value}, 80%, 50%)`;
-
     return html`
       <ha-card header="${this.config.title || "Room Brightness"}">
         <div
-          class="slider-wrapper"
-          style="--slider-color:${dynamicColor}"
+          class="wrapper"
+          style="--slider-color:${this._color};"
         >
-          <ha-slider
-            min="0"
-            max="100"
-            step="1"
-            .value=${this._value}
-            @change=${this._onChange}
-          ></ha-slider>
-        </div>
+          <div class="slider-container">
+            <ha-slider
+              min="0"
+              max="100"
+              step="1"
+              .value=${this._value}
+              @change=${this._onChange}
+            ></ha-slider>
+          </div>
 
-        <div class="value">${this._value}%</div>
+          <div class="value">${this._value}%</div>
+        </div>
 
         ${this.config.custom_css
           ? html`<style>${this.config.custom_css}</style>`
@@ -74,9 +112,9 @@ class RelativeLightSlider extends LitElement {
     `;
   }
 
-  /* ------------------------
+  /* -------------------------
      ENTITY / AREA RESOLUTION
-  ------------------------- */
+  -------------------------- */
 
   _getTargetLights() {
     if (this.config.entity) {
@@ -105,9 +143,9 @@ class RelativeLightSlider extends LitElement {
     return [];
   }
 
-  /* ------------------------
-     AVERAGE CALCULATION
-  ------------------------- */
+  /* -------------------------
+     BRIGHTNESS
+  -------------------------- */
 
   _calculateAverageBrightness() {
     const lights = this._getTargetLights();
@@ -124,13 +162,83 @@ class RelativeLightSlider extends LitElement {
       }
     });
 
-    if (count === 0) return 0;
+    if (!count) return 0;
     return Math.round((total / count / 255) * 100);
   }
 
-  /* ------------------------
-     APPLY BRIGHTNESS
-  ------------------------- */
+  /* -------------------------
+     COLOR DETECTION
+  -------------------------- */
+
+
+  _calculateAverageColor() {
+    const lights = this._getTargetLights();
+
+    let r = 0, g = 0, b = 0, count = 0;
+
+    lights.forEach(id => {
+      const s = this._hass.states[id];
+      if (!s || s.state !== "on") return;
+
+      if (s.attributes.rgb_color) {
+        r += s.attributes.rgb_color[0];
+        g += s.attributes.rgb_color[1];
+        b += s.attributes.rgb_color[2];
+        count++;
+      }
+    });
+
+    if (!count) return "var(--primary-color)";
+
+    r = Math.round(r / count);
+    g = Math.round(g / count);
+    b = Math.round(b / count);
+
+    return `rgb(${r}, ${g}, ${b})`;
+  }
+
+    _kelvinToRGB(kelvin) {
+    // Clamp range
+    kelvin = Math.min(6500, Math.max(2000, kelvin));
+    const temp = kelvin / 100;
+
+    let red, green, blue;
+
+    // Red
+    if (temp <= 66) {
+      red = 255;
+    } else {
+      red = temp - 60;
+      red = 329.698727446 * Math.pow(red, -0.1332047592);
+      red = Math.min(255, Math.max(0, red));
+    }
+
+    // Green
+    if (temp <= 66) {
+      green = 99.4708025861 * Math.log(temp) - 161.1195681661;
+    } else {
+      green = temp - 60;
+      green = 288.1221695283 * Math.pow(green, -0.0755148492);
+    }
+    green = Math.min(255, Math.max(0, green));
+
+    // Blue
+    if (temp >= 66) {
+      blue = 255;
+    } else if (temp <= 19) {
+      blue = 0;
+    } else {
+      blue = temp - 10;
+      blue = 138.5177312231 * Math.log(blue) - 305.0447927307;
+      blue = Math.min(255, Math.max(0, blue));
+    }
+
+    return `rgb(${Math.round(red)}, ${Math.round(green)}, ${Math.round(blue)})`;
+  }
+
+  /* -------------------------
+     APPLY
+  -------------------------- */
 
   _onChange(e) {
     const percent = e.target.value;
@@ -153,20 +261,10 @@ class RelativeLightSlider extends LitElement {
         return;
       }
 
-      if (s.state === "off" && this.config.turn_on_if_above_zero) {
-        this._hass.callService("light", "turn_on", {
-          entity_id: id,
-          brightness
-        });
-        return;
-      }
-
-      if (s.state === "on") {
-        this._hass.callService("light", "turn_on", {
-          entity_id: id,
-          brightness
-        });
-      }
+      this._hass.callService("light", "turn_on", {
+        entity_id: id,
+        brightness
+      });
     });
   }
 
