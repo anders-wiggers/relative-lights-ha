@@ -39,12 +39,8 @@ class RelativeLightSlider extends LitElement {
     }
 
     ha-slider::part(indicator) {
-      background-color: background-color: 
-    }
- 
-    ha-card {
-      padding: 16px;
-    }
+      background-color: var(--slider-color);
+    } 
 
     .wrapper {
       width: 100%;
